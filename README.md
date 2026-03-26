@@ -16,7 +16,7 @@ AI-powered focus space that uses real-time face detection to keep you productive
 * **Typography:** Playfair Display & Quicksand via Google Fonts
 
 ## Getting Started
-
+https://miaxaul.github.io/focusapp/
 
 ## 📜 License
 This project is for personal and educational use.

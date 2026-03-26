@@ -22,4 +22,4 @@ https://miaxaul.github.io/focusapp/
 This project is for personal and educational use.
 
 ---
-*Author: **Brilliana***
+*Author: **Brielliana***

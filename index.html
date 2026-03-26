@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aesthetic Focus Space</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Face-API for Real Face Detection -->
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;600&family=Playfair+Display:italic,wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #FDF8F5;
+            color: #3E2723; /* Dark Choco */
+        }
+        .font-serif-italic { font-family: 'Playfair Display', serif; font-style: italic; }
+        .bg-glass {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #FADADD 0%, #E6E6FA 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-gradient:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(250, 218, 221, 0.5); }
+        #video-container video { transform: scaleX(-1); }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    </style>
+</head>
+<body class="overflow-x-hidden min-h-screen">
+
+    <!-- Sound Element: Menggunakan file lokal kamu -->
+    <audio id="buzzer-sound" src="f652399f-de17-49bd-b29f-39aef0cba9f1.mp3" loop></audio>
+
+    <!-- Background Ornaments -->
+    <div class="fixed inset-0 pointer-events-none opacity-40 z-0">
+        <div class="absolute top-10 left-10 w-64 h-64 bg-[#FADADD] rounded-full blur-[100px]"></div>
+        <div class="absolute bottom-20 right-10 w-80 h-80 bg-[#E6E6FA] rounded-full blur-[100px]"></div>
+    </div>
+
+    <div id="app" class="relative z-10 flex flex-col items-center justify-center min-h-screen p-6">
+        
+        <!-- SCREEN 1: ONBOARDING -->
+        <div id="screen-onboarding" class="w-full max-w-md bg-glass p-10 rounded-[2.5rem] shadow-2xl text-center">
+            <div class="mb-6">
+                <div class="inline-flex p-4 bg-pink-100 rounded-full mb-4">✨</div>
+                <h1 class="text-3xl font-serif-italic text-[#3E2723]">Halo Cantik!</h1>
+                <p class="text-sm text-[#5D4037] mt-2">Siap buat jadi produktif hari ini?</p>
+            </div>
+
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="text-[10px] uppercase tracking-widest font-bold ml-2 text-[#8D6E63]">Nama Kamu</label>
+                    <input id="input-name" type="text" placeholder="Masukkan namamu..." class="w-full mt-1 px-5 py-4 rounded-2xl bg-white border border-pink-100 focus:outline-none focus:ring-2 focus:ring-pink-200 transition-all text-[#3E2723]">
+                </div>
+                <div>
+                    <label class="text-[10px] uppercase tracking-widest font-bold ml-2 text-[#8D6E63]">Apa yang mau dikerjakan?</label>
+                    <input id="input-goal" type="text" placeholder="Contoh: Belajar UI/UX..." class="w-full mt-1 px-5 py-4 rounded-2xl bg-white border border-pink-100 focus:outline-none focus:ring-2 focus:ring-pink-200 transition-all text-[#3E2723]">
+                </div>
+                <button onclick="submitOnboarding()" class="w-full mt-6 py-4 rounded-2xl btn-gradient text-[#3E2723] font-bold shadow-lg">Mulai Fokus ✨</button>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: TRANSITION & AFFIRMATION -->
+        <div id="screen-transition" class="hidden text-center max-w-md animate-pulse">
+            <h2 id="display-countdown" class="text-8xl font-serif-italic text-pink-400">3</h2>
+            <div class="mt-8 bg-white/40 p-6 rounded-3xl border border-white">
+                <p class="text-[10px] uppercase tracking-widest text-[#8D6E63] mb-2">Pesan Untukmu:</p>
+                <p id="display-affirmation" class="text-xl font-serif-italic text-[#3E2723] italic">"Kamu hebat dan pasti bisa!"</p>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: FOCUS MODE -->
+        <div id="screen-focus" class="hidden w-full max-w-5xl flex flex-col md:flex-row gap-8 items-center">
+            <!-- Camera View -->
+            <div id="video-container" class="relative w-full md:w-1/2 aspect-video bg-black rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white">
+                <video id="video" autoplay muted class="w-full h-full object-cover"></video>
+                <div class="absolute top-4 left-4 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-[10px] text-white flex items-center gap-2">
+                    <span id="status-dot" class="status-dot bg-green-400"></span>
+                    <span id="status-text">MENCARI WAJAH...</span>
+                </div>
+            </div>
+
+            <!-- Dashboard -->
+            <div class="w-full md:w-1/2 bg-glass p-10 rounded-[3rem] shadow-xl text-center">
+                <span class="bg-pink-100 text-pink-500 text-[10px] font-bold px-4 py-1 rounded-full tracking-[0.2em]">FOCUSING MODE</span>
+                <h2 id="display-goal" class="text-2xl font-serif-italic text-[#3E2723] mt-4 mb-2">Tugas</h2>
+                <div id="timer" class="text-8xl font-light text-[#3E2723] my-6 tracking-tighter">00:00</div>
+                
+                <p class="text-sm text-[#8D6E63] mb-8 px-4 font-medium italic" id="active-affirmation"></p>
+
+                <button onclick="finishFocus()" class="bg-[#3E2723] text-white px-12 py-4 rounded-full font-bold hover:bg-black transition-all flex items-center gap-2 mx-auto">
+                    Done ✓
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: DONE -->
+        <div id="screen-summary" class="hidden w-full max-w-md bg-glass p-10 rounded-[3rem] shadow-2xl text-center">
+            <div class="text-6xl mb-4">🎉</div>
+            <h2 id="summary-title" class="text-3xl font-serif-italic text-[#3E2723]">Luar Biasa!</h2>
+            <p class="text-[#5D4037] mt-2 mb-8" id="summary-text"></p>
+            <button onclick="location.reload()" class="w-full py-4 rounded-2xl bg-white text-[#3E2723] font-bold border border-pink-200 hover:bg-pink-50">Fokus Lagi? ✨</button>
+        </div>
+
+    </div>
+
+    <script>
+        let timerSeconds = 0;
+        let timerInterval;
+        let faceDetectionInterval;
+        let userName = "";
+        let consecutiveMissingFrames = 0;
+        const affirmations = [
+            "Kamu lebih kuat dari yang kamu kira. ✨",
+            "Setiap langkah kecil membawamu lebih dekat ke impianmu. 🌸",
+            "Fokus sekarang, bersantai nanti dengan bangga. 🦢",
+            "Dunia butuh cahaya dan bakatmu! 🦋",
+            "Kamu sedang membangun masa depan yang cerah. 🕯️",
+            "Tarik napas, fokus, dan biarkan keajaiban terjadi. ✨",
+            "Istirahatlah jika lelah, tapi jangan berhenti ya cantik. ☁️",
+            "Kamu berharga dan pekerjaanmu itu penting. 💖",
+            "Satu hal dalam satu waktu, kamu pasti bisa! 🧸",
+            "Jangan bandingkan dirimu dengan orang lain, kamu unik. 🎀"
+        ];
+
+        async function initAI() {
+            // Load Models for Face API
+            const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+            console.log("AI Models Loaded");
+        }
+
+        initAI();
+
+        function submitOnboarding() {
+            userName = document.getElementById('input-name').value;
+            const goal = document.getElementById('input-goal').value;
+
+            if(!userName || !goal) return alert("Isi nama dan tujuanmu dulu ya, cantik! 🌸");
+
+            const randomAff = affirmations[Math.floor(Math.random() * affirmations.length)];
+            document.getElementById('display-affirmation').innerText = `"${randomAff}"`;
+            document.getElementById('active-affirmation').innerText = `"${randomAff}"`;
+            document.getElementById('display-goal').innerText = goal;
+
+            showScreen('screen-transition');
+            
+            let count = 3;
+            const countdownEl = document.getElementById('display-countdown');
+            const countdownInt = setInterval(() => {
+                count--;
+                countdownEl.innerText = count;
+                if(count === 0) {
+                    clearInterval(countdownInt);
+                    startFocusSession();
+                }
+            }, 1000);
+        }
+
+        async function startFocusSession() {
+            showScreen('screen-focus');
+            const buzzer = document.getElementById('buzzer-sound');
+            
+            // Start Timer
+            timerInterval = setInterval(() => {
+                timerSeconds++;
+                const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+                const secs = (timerSeconds % 60).toString().padStart(2, '0');
+                document.getElementById('timer').innerText = `${mins}:${secs}`;
+            }, 1000);
+
+            // Start Camera & Face Detection
+            try {
+                const video = document.getElementById('video');
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+                video.srcObject = stream;
+
+                video.onplay = () => {
+                    faceDetectionInterval = setInterval(async () => {
+                        // Menggunakan tinyFaceDetector dengan inputSize lebih besar untuk akurasi lebih baik
+                        const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }));
+                        
+                        const statusDot = document.getElementById('status-dot');
+                        const statusText = document.getElementById('status-text');
+
+                        if (detections.length > 0) {
+                            statusDot.className = "status-dot bg-green-400";
+                            statusText.innerText = "FOKUS TERDETEKSI";
+                            consecutiveMissingFrames = 0;
+                            
+                            // Matikan buzzer jika wajah terdeteksi kembali
+                            if (!buzzer.paused) {
+                                buzzer.pause();
+                                buzzer.currentTime = 0;
+                            }
+                        } else {
+                            statusDot.className = "status-dot bg-red-400 animate-ping";
+                            statusText.innerText = `DIMANA ${userName.toUpperCase()}? 🚨`;
+                            consecutiveMissingFrames++;
+
+                            // Jika 4 kali check (sekitar 2 detik) muka nggak ada, bunyi buzzer
+                            if (consecutiveMissingFrames >= 4) {
+                                if (buzzer.paused) {
+                                    buzzer.play().catch(e => console.log("Audio play blocked"));
+                                }
+                            }
+                        }
+                    }, 500);
+                };
+            } catch (err) {
+                alert("Akses kamera ditolak. Fitur deteksi wajah tidak akan berfungsi.");
+            }
+        }
+
+        function finishFocus() {
+            clearInterval(timerInterval);
+            clearInterval(faceDetectionInterval);
+            
+            const buzzer = document.getElementById('buzzer-sound');
+            buzzer.pause();
+            buzzer.currentTime = 0;
+
+            const video = document.getElementById('video');
+            if(video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+
+            const mins = Math.floor(timerSeconds / 60);
+            document.getElementById('summary-title').innerText = `Luar Biasa, ${userName}!`;
+            document.getElementById('summary-text').innerText = `Kamu berhasil fokus selama ${mins} menit ${timerSeconds % 60} detik. Bangga banget sama kamu! 💖`;
+            showScreen('screen-summary');
+        }
+
+        function showScreen(id) {
+            document.getElementById('screen-onboarding').classList.add('hidden');
+            document.getElementById('screen-transition').classList.add('hidden');
+            document.getElementById('screen-focus').classList.add('hidden');
+            document.getElementById('screen-summary').classList.add('hidden');
+            document.getElementById(id).classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
